@@ -1,0 +1,124 @@
+⚙️ Step 1: Create Database and Collection
+use salesDB
+db.createCollection("orders")
+
+🧩 Step 2: Insert Sample Documents
+db.orders.insertMany([
+  { _id: 1, customer: "Rohan",  product: "Laptop",  quantity: 2, price: 50000, city: "Pune" },
+  { _id: 2, customer: "Ravina", product: "Mouse",   quantity: 5, price: 500,   city: "Mumbai" },
+  { _id: 3, customer: "Sneha",  product: "Keyboard",quantity: 3, price: 1500,  city: "Delhi" },
+  { _id: 4, customer: "Rohan",  product: "Mouse",   quantity: 2, price: 500,   city: "Pune" },
+  { _id: 5, customer: "Arjun",  product: "Laptop",  quantity: 1, price: 50000, city: "Pune" },
+  { _id: 6, customer: "Ravina", product: "Laptop",  quantity: 1, price: 50000, city: "Mumbai" },
+  { _id: 7, customer: "Sneha",  product: "Mouse",   quantity: 4, price: 500,   city: "Delhi" }
+])
+
+🧮 Part 1 – MapReduce
+MapReduce is used for custom aggregation or analytics — it uses JavaScript map and reduce functions.
+1️⃣ Calculate total revenue per product
+
+Map Function:
+
+var mapFunction = function() {
+  emit(this.product, this.quantity * this.price);
+};
+
+
+Reduce Function:
+
+var reduceFunction = function(key, values) {
+  return Array.sum(values);
+};
+
+
+Run MapReduce:
+
+db.orders.mapReduce(
+  mapFunction,
+  reduceFunction,
+  { out: "total_revenue_per_product" }
+)
+
+
+Check results:
+
+db.total_revenue_per_product.find()
+
+
+🟢 Output:
+
+[
+  { "_id": "Laptop", "value": 200000 },
+  { "_id": "Mouse", "value": 5500 },
+  { "_id": "Keyboard", "value": 4500 }
+]
+
+2️⃣ Count total orders per customer
+
+Map Function:
+
+var mapCustomer = function() {
+  emit(this.customer, 1);
+};
+
+
+Reduce Function:
+
+var reduceCustomer = function(key, values) {
+  return Array.sum(values);
+};
+
+
+Execute MapReduce:
+
+db.orders.mapReduce(
+  mapCustomer,
+  reduceCustomer,
+  { out: "orders_per_customer" }
+)
+
+
+View results:
+
+db.orders_per_customer.find()
+
+
+🟢 Output:
+
+[
+  { "_id": "Rohan", "value": 2 },
+  { "_id": "Ravina", "value": 2 },
+  { "_id": "Sneha", "value": 2 },
+  { "_id": "Arjun", "value": 1 }
+]
+
+⚙️ Part 2 – Indexing
+
+Indexes improve query performance by avoiding full collection scans.
+
+1️⃣ Check existing indexes
+db.orders.getIndexes()
+
+2️⃣ Create a Single Field Index
+db.orders.createIndex({ customer: 1 })
+
+
+🟢 Creates an ascending index on the customer field.
+
+3️⃣ Create a Compound Index
+db.orders.createIndex({ city: 1, price: -1 })
+
+
+🟢 Creates an index on city (ascending) and price (descending).
+
+4️⃣ Analyze Query Performance
+
+Before and after creating the index:
+
+db.orders.find({ city: "Pune" }).explain("executionStats")
+
+
+✅ Check executionTimeMillis — it will reduce after indexing.
+
+5️⃣ Drop Index
+db.orders.dropIndex({ customer: 1 })
