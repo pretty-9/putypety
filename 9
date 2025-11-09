@@ -1,0 +1,107 @@
+⚙️ Step 1: Create Database and Collection
+use ecommerceDB
+db.createCollection("orders")
+
+🧩 Step 2: Insert Sample Documents
+db.orders.insertMany([
+  { _id: 1, customer: "Rohan",  product: "Laptop",  quantity: 1, price: 50000, city: "Pune" },
+  { _id: 2, customer: "Ravina", product: "Mouse",   quantity: 3, price: 500,   city: "Mumbai" },
+  { _id: 3, customer: "Sneha",  product: "Keyboard",quantity: 2, price: 1500,  city: "Delhi" },
+  { _id: 4, customer: "Rohan",  product: "Mouse",   quantity: 1, price: 500,   city: "Pune" },
+  { _id: 5, customer: "Arjun",  product: "Laptop",  quantity: 2, price: 50000, city: "Pune" },
+  { _id: 6, customer: "Ravina", product: "Laptop",  quantity: 1, price: 50000, city: "Mumbai" },
+  { _id: 7, customer: "Sneha",  product: "Mouse",   quantity: 4, price: 500,   city: "Delhi" },
+  { _id: 8, customer: "Karan",  product: "Laptop",  quantity: 1, price: 50000, city: "Pune" }
+])
+
+🧮 Part 1 – Aggregation Operations
+
+Aggregation is used to perform grouping, filtering, sorting, and summarization of data.
+
+1️⃣ Find Total Revenue per Product
+db.orders.aggregate([
+  {
+    $group: {
+      _id: "$product",
+      totalRevenue: { $sum: { $multiply: ["$quantity", "$price"] } }
+    }
+  }
+])
+
+
+🟢 Output:
+
+[
+  { "_id": "Laptop", "totalRevenue": 250000 },
+  { "_id": "Mouse", "totalRevenue": 4500 },
+  { "_id": "Keyboard", "totalRevenue": 3000 }
+]
+
+2️⃣ Average Quantity per Customer
+db.orders.aggregate([
+  {
+    $group: {
+      _id: "$customer",
+      avgQuantity: { $avg: "$quantity" }
+    }
+  }
+])
+
+3️⃣ Filter Orders above ₹1000 and Sort by Price
+db.orders.aggregate([
+  { $match: { price: { $gt: 1000 } } },
+  { $sort: { price: -1 } }
+])
+
+4️⃣ Multiple Stages Example
+db.orders.aggregate([
+  { $match: { city: "Pune" } },
+  {
+    $group: {
+      _id: "$customer",
+      totalAmount: { $sum: { $multiply: ["$quantity", "$price"] } }
+    }
+  },
+  { $sort: { totalAmount: -1 } }
+])
+
+
+🟢 Output:
+
+[
+  { "_id": "Arjun", "totalAmount": 100000 },
+  { "_id": "Rohan", "totalAmount": 50500 },
+  { "_id": "Karan", "totalAmount": 50000 }
+]
+
+⚙️ Part 2 – Indexing
+
+Indexes in MongoDB improve query performance by reducing scan time.
+You can index one or more fields to make searches faster.
+
+1️⃣ View Current Indexes
+db.orders.getIndexes()
+
+2️⃣ Create Single Field Index
+db.orders.createIndex({ customer: 1 })
+
+
+🟢 This creates an ascending index on customer.
+
+3️⃣ Create Compound Index (Multiple Fields)
+db.orders.createIndex({ city: 1, price: -1 })
+
+
+🟢 This creates an index combining city and price.
+
+4️⃣ Check Query Performance (Before & After Index)
+
+Use the .explain("executionStats") command:
+
+db.orders.find({ city: "Pune" }).explain("executionStats")
+
+
+Check executionTimeMillis — it will drop after creating an index ✅
+
+5️⃣ Drop an Index
+db.orders.dropIndex({ customer: 1 })
