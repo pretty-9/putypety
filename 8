@@ -1,0 +1,135 @@
+⚙️ Step 1: Create Database and Collection
+use salesDB
+db.createCollection("orders")
+
+Insert sample data:
+db.orders.insertMany([
+  { _id: 1, customer: "Rohan", product: "Laptop",  quantity: 2, price: 50000 },
+  { _id: 2, customer: "Ravina", product: "Mouse",   quantity: 5, price: 500 },
+  { _id: 3, customer: "Arjun",  product: "Laptop",  quantity: 1, price: 50000 },
+  { _id: 4, customer: "Sneha",  product: "Keyboard",quantity: 3, price: 1500 },
+  { _id: 5, customer: "Rohan",  product: "Mouse",   quantity: 2, price: 500 },
+  { _id: 6, customer: "Ravina", product: "Laptop",  quantity: 1, price: 50000 },
+  { _id: 7, customer: "Sneha",  product: "Mouse",   quantity: 4, price: 500 }
+])
+
+🧮 Part 1: Aggregation Framework
+
+Aggregation helps in summarizing, grouping, and transforming data — similar to SQL’s GROUP BY.
+
+1️⃣ Calculate total sales per customer
+db.orders.aggregate([
+  { 
+    $group: {
+      _id: "$customer",
+      totalSales: { $sum: { $multiply: ["$quantity", "$price"] } }
+    }
+  }
+])
+
+
+🟢 Output:
+
+[
+  { "_id": "Rohan",  "totalSales": 101000 },
+  { "_id": "Ravina", "totalSales": 52500 },
+  { "_id": "Sneha",  "totalSales": 4500 },
+  { "_id": "Arjun",  "totalSales": 50000 }
+]
+
+2️⃣ Find average quantity per product
+db.orders.aggregate([
+  {
+    $group: {
+      _id: "$product",
+      avgQuantity: { $avg: "$quantity" }
+    }
+  }
+])
+
+3️⃣ Filter using $match and sort results
+db.orders.aggregate([
+  { $match: { price: { $gte: 1000 } } },
+  { $sort: { price: -1 } }
+])
+
+4️⃣ Combine multiple stages
+db.orders.aggregate([
+  { $match: { price: { $gt: 1000 } } },
+  { 
+    $group: {
+      _id: "$product",
+      totalRevenue: { $sum: { $multiply: ["$quantity", "$price"] } }
+    }
+  },
+  { $sort: { totalRevenue: -1 } }
+])
+
+⚙️ Part 2: MapReduce
+
+MapReduce is used for custom data aggregation using JavaScript functions (Map + Reduce).
+
+1️⃣ Example: Calculate total sales per product
+
+Map function:
+
+var mapFunction = function() {
+  emit(this.product, this.quantity * this.price);
+};
+
+
+Reduce function:
+
+var reduceFunction = function(key, values) {
+  return Array.sum(values);
+};
+
+
+Execute MapReduce:
+
+db.orders.mapReduce(
+  mapFunction,
+  reduceFunction,
+  { out: "total_sales_per_product" }
+)
+
+
+View results:
+
+db.total_sales_per_product.find()
+
+
+🟢 Output:
+
+[
+  { "_id": "Laptop", "value": 100000 },
+  { "_id": "Mouse", "value": 6000 },
+  { "_id": "Keyboard", "value": 4500 }
+]
+
+2️⃣ Example: Count total orders per customer
+var mapCust = function() {
+  emit(this.customer, 1);
+};
+
+var reduceCust = function(key, values) {
+  return Array.sum(values);
+};
+
+db.orders.mapReduce(
+  mapCust,
+  reduceCust,
+  { out: "orders_per_customer" }
+)
+
+db.orders_per_customer.find()
+
+
+🟢 Output:
+
+[
+  { "_id": "Rohan", "value": 2 },
+  { "_id": "Ravina", "value": 2 },
+  { "_id": "Sneha", "value": 2 },
+  { "_id": "Arjun", "value": 1 }
+]
