@@ -1,0 +1,83 @@
+🧩 Step 1 – Create Database and Collection
+use collegeDB
+db.createCollection("students")
+
+🧩 Step 2 – Inserting Documents
+👉 Single Insert
+db.students.insertOne({ name: "Rohan", age: 20, course: "IT", marks: 85, hobbies: ["cricket", "coding"] })
+
+👉 Batch Insert
+db.students.insertMany([
+  { name: "Ravina", age: 21, course: "CS", marks: 92, hobbies: ["music", "reading"] },
+  { name: "Arjun", age: 22, course: "IT", marks: 78, hobbies: ["football", "gaming"] },
+  { name: "Sneha", age: 20, course: "ENTC", marks: 88, hobbies: ["painting", "dancing"] },
+  { name: "Rahul", age: 21, course: "CS", marks: 67, hobbies: ["coding", "music"] }
+])
+
+
+✅ Insert validation
+MongoDB automatically validates field types during insert (e.g., strings, numbers, arrays).
+You can also add validation rules later using db.createCollection() with a schema.
+
+🧩 Step 3 – Removing Documents
+👉 Remove one document
+db.students.deleteOne({ name: "Rahul" })
+
+👉 Remove multiple
+db.students.deleteMany({ course: "ENTC" })
+
+🧩 Step 4 – Updating Documents
+👉 Replace entire document
+db.students.replaceOne({ name: "Ravina" }, { name: "Ravina", age: 22, course: "CS", marks: 95 })
+
+👉 Update specific fields using $set
+db.students.updateOne({ name: "Rohan" }, { $set: { marks: 90 } })
+
+👉 Update multiple
+db.students.updateMany({ course: "IT" }, { $inc: { marks: 5 } })
+
+👉 Upsert (update if exists, else insert)
+db.students.updateOne({ name: "John" }, { $set: { course: "IT", marks: 80 } }, { upsert: true })
+
+👉 Return updated document
+db.students.findOneAndUpdate({ name: "Rohan" }, { $set: { marks: 93 } }, { returnDocument: "after" })
+
+🧩 Step 5 – 10+ Queries
+1️⃣ Find all documents
+db.students.find()
+
+2️⃣ Find one specific
+db.students.findOne({ name: "Rohan" })
+
+3️⃣ Query with condition (>, <, >=, <=)
+db.students.find({ marks: { $gt: 80 } })
+
+4️⃣ OR query
+db.students.find({ $or: [ { course: "CS" }, { marks: { $lt: 80 } } ] })
+
+5️⃣ NOT query
+db.students.find({ marks: { $not: { $gt: 90 } } })
+
+6️⃣ Querying for Null
+db.students.insertOne({ name: "Kiran", course: null })
+db.students.find({ course: null })
+
+7️⃣ Regular Expression query
+db.students.find({ name: { $regex: /^R/i } })
+
+8️⃣ Querying Arrays (contains “coding”)
+db.students.find({ hobbies: "coding" })
+
+9️⃣ $where query (custom JS condition)
+db.students.find({ $where: "this.marks > 85 && this.age < 22" })
+
+🔟 Cursors — Limit, Skip, Sort
+db.students.find().sort({ marks: -1 }).limit(3).skip(1)
+
+1️⃣1️⃣ Advanced Query Option — Projection
+db.students.find({}, { name: 1, marks: 1, _id: 0 })
+
+✅ Final Step – View Database
+show dbs
+use collegeDB
+db.students.find().pretty()
